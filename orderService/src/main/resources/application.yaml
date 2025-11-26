@@ -1,0 +1,27 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: orderService
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orders_db
+    driverClassName: org.postgresql.Driver
+    username: postgres
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  secret: 2XZCFnmx0gac6Obn7LVsXtxpT36eCKJBGEbXg3luFuN2
+  access-expiration: 3600000
+  refresh-expiration: 7200000
