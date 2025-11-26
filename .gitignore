@@ -1,1 +1,6 @@
 /.gradle/
+/.idea/
+/dev/
+/inventoryService/build/
+/notificationService/build/
+/orderService/build/
