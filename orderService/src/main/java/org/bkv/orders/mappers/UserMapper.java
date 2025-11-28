@@ -9,9 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "password", ignore = true)
-    UserEntity toUserEntity(RegisterUserRequest request);
-
     UserDto toUserDto(UserEntity entity);
 
     @AfterMapping

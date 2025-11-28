@@ -26,7 +26,7 @@ public class NotifyController {
     }
 
     @GetMapping(path = "/getOrders")
-    public ResponseEntity<@NonNull List<OrderEntity>> getNotifications() {
+    public ResponseEntity<@NonNull List<OrderEntity>> getOrders() {
         List<OrderEntity> orders = orderService.findAll();
         return ResponseEntity.ok(orders);
     }

@@ -35,9 +35,15 @@ dependencies {
     implementation(libs.mapstruct)
     annotationProcessor(libs.mapstruct.processor)
 
-    testImplementation(platform(libs.junit.bom))
+    // ---- TESTS ----
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.spring.security.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.test.webmvc)
+    testImplementation(platform(libs.junit.bom))
+
 }
 
 tasks.test {

@@ -1,170 +1,134 @@
 package org.bkv.orders.controllers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bkv.orders.dto.requests.LoginUserRequest;
 import org.bkv.orders.dto.requests.RegisterUserRequest;
+import org.bkv.orders.dto.responses.LoginUserResponse;
+import org.bkv.orders.dto.responses.RefreshResponse;
+import org.bkv.orders.dto.responses.RegisterUserResponse;
 import org.bkv.orders.entity.UserEntity;
-import org.bkv.orders.security.JwtUtil;
+import org.bkv.orders.models.LoginResult;
+import org.bkv.orders.models.UserDto;
 import org.bkv.orders.services.impls.UserService;
-import org.junit.jupiter.api.MediaType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.http.RequestEntity.post;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(AuthController.class)
+@SpringBootTest
 class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mvc;
-
-    @Autowired
-    private ObjectMapper mapper;
-
-    @MockBean
-    private JwtUtil jwtUtil;
-
-    @MockBean
+    @Mock
     private UserService userService;
 
-    @MockBean
-    private PasswordEncoder encoder;
+    @InjectMocks
+    private AuthController authController;
 
-    @MockBean
-    private AuthenticationManager authManager;
-
-    // ----------------------------------------------------------
-    // REGISTER
-    // ----------------------------------------------------------
-    @Test
-    void registerSuccess() throws Exception {
-
-        RegisterUserRequest req = new RegisterUserRequest("newUser", "pass");
-
-        Mockito.when(userService.findByUserName("newUser"))
-                .thenReturn(Optional.empty());
-
-        Mockito.when(userService.saveUser(any(UserEntity.class)))
-                .thenReturn(new UserEntity());
-
-        mvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    void registerUserAlreadyExists() throws Exception {
-
-        RegisterUserRequest req = new RegisterUserRequest("user", "pass");
-
-        Mockito.when(userService.findByUserName("user"))
-                .thenReturn(Optional.of(new UserEntity()));
-
-        mvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(req)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.success").value(false));
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
 
-    // ----------------------------------------------------------
-    // LOGIN
-    // ----------------------------------------------------------
     @Test
-    void loginSuccess() throws Exception {
+    void register_success() {
+        RegisterUserRequest request = new RegisterUserRequest("testUser", "email", "password", "user");
+        UserEntity savedUser = new UserEntity();
+        savedUser.setUserId(1L);
 
-        LoginUserRequest req = new LoginUserRequest("user", "pass");
+        when(userService.saveAndGetUserEntity(request)).thenReturn(savedUser);
 
-        // mock authentication
-        User springUser = new User("user", "encoded", java.util.List.of());
-        Mockito.when(authManager.authenticate(any()))
-                .thenReturn(new UsernamePasswordAuthenticationToken(springUser, null, springUser.getAuthorities()));
+        ResponseEntity<RegisterUserResponse> response = authController.register(request);
 
-        Mockito.when(userService.findByUserName("user"))
-                .thenReturn(Optional.of(new UserEntity()));
-
-        Mockito.when(jwtUtil.generateAccessToken("user"))
-                .thenReturn("ACCESS_TOKEN");
-
-        Mockito.when(jwtUtil.generateRefreshToken("user"))
-                .thenReturn("REFRESH_TOKEN");
-
-        mvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(cookie().exists("refreshToken"))
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.accessToken").value("ACCESS_TOKEN"));
+        assertTrue(response.getBody().status());
+        verify(userService, times(1)).saveAndGetUserEntity(request);
     }
 
     @Test
-    void loginBadCredentials() throws Exception {
+    void register_failure() {
+        RegisterUserRequest request = new RegisterUserRequest("testUser", "email", "password", "user");
 
-        LoginUserRequest req = new LoginUserRequest("u", "p");
+        when(userService.saveAndGetUserEntity(request)).thenReturn(null);
 
-        Mockito.when(authManager.authenticate(any()))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
+        ResponseEntity<RegisterUserResponse> response = authController.register(request);
 
-        mvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(req)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+        assertFalse(response.getBody().status());
+        verify(userService, times(1)).saveAndGetUserEntity(request);
     }
 
 
-    // ----------------------------------------------------------
-    // REFRESH
-    // ----------------------------------------------------------
     @Test
-    void refreshSuccess() throws Exception {
+    void login_success() {
 
-        Mockito.when(jwtUtil.isRefreshTokenValid("REFRESH")).thenReturn(true);
-        Mockito.when(jwtUtil.extractUserName("REFRESH")).thenReturn("user");
-        Mockito.when(jwtUtil.generateAccessToken("user")).thenReturn("NEW_ACCESS");
+        LoginUserRequest request = new LoginUserRequest("user", "pass");
+        UserDto user = new UserDto(1L, "", "", "");
 
-        mvc.perform(post("/api/auth/refresh")
-                        .cookie(new javax.servlet.http.Cookie("refreshToken", "REFRESH"))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.accessToken").value("NEW_ACCESS"));
+        LoginResult loginResult = new LoginResult(user, "accessToken123", "refreshToken123");
+
+        when(userService.login("user", "pass")).thenReturn(loginResult);
+
+        ResponseEntity<LoginUserResponse> response = authController.login(request);
+
+        assertEquals(user, response.getBody().user());
+        assertEquals("accessToken123", response.getBody().accessToken());
+        assertTrue(response.getBody().status());
+
+        String setCookieHeader = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+        assertNotNull(setCookieHeader);
+        assertTrue(setCookieHeader.contains("refreshToken=refreshToken123"));
     }
 
     @Test
-    void refreshInvalidToken() throws Exception {
+    void login_badCredentials() {
+        LoginUserRequest request = new LoginUserRequest("user", "wrongpass");
 
-        Mockito.when(jwtUtil.isRefreshTokenValid("BAD")).thenReturn(false);
+        when(userService.login("user", "wrongpass")).thenThrow(new BadCredentialsException("Bad credentials"));
 
-        mvc.perform(post("/api/auth/refresh")
-                        .cookie(new javax.servlet.http.Cookie("refreshToken", "BAD")))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+        ResponseEntity<LoginUserResponse> response = authController.login(request);
+
+        assertNull(response.getBody().user());
+        assertEquals("", response.getBody().accessToken());
+        assertFalse(response.getBody().status());
     }
 
     @Test
-    void refreshNoCookie() throws Exception {
+    void refresh_success() {
+        String oldToken = "oldToken";
+        String newToken = "newToken";
 
-        mvc.perform(post("/api/auth/refresh"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+        when(userService.checkRefreshToken(oldToken)).thenReturn(true);
+        when(userService.createRefreshToken(oldToken)).thenReturn(newToken);
+
+        ResponseEntity<RefreshResponse> response = authController.refresh(oldToken);
+
+        assertTrue(response.getBody().status());
+        assertEquals(newToken, response.getBody().token());
+    }
+
+    @Test
+    void refresh_missingToken() {
+        ResponseEntity<RefreshResponse> response = authController.refresh(null);
+
+        assertFalse(response.getBody().status());
+        assertEquals("", response.getBody().token());
+    }
+
+    @Test
+    void refresh_invalidToken() {
+        String invalidToken = "invalidToken";
+
+        when(userService.checkRefreshToken(invalidToken)).thenReturn(false);
+
+        ResponseEntity<RefreshResponse> response = authController.refresh(invalidToken);
+
+        assertFalse(response.getBody().status());
+        assertEquals("", response.getBody().token());
     }
 }
