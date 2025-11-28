@@ -6,10 +6,11 @@ spring:
     name: inventoryService
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/products_db
-    driverClassName: org.postgresql.Driver
-    username: postgres
-    password: root
+    url: ${INVENTORY_SERVICE_DATASOURCE_URL}
+    username: ${INVENTORY_SERVICE_DATASOURCE_USERNAME}
+    password: ${INVENTORY_SERVICE_DATASOURCE_PASSWORD}
+    driverClassName: ${INVENTORY_SERVICE_DATASOURCE_DRIVER}
+
 
   jpa:
     hibernate:

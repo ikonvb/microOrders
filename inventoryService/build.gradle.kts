@@ -22,7 +22,7 @@ configurations {
 
 dependencies {
 
-    implementation("io.github.lognet:grpc-spring-boot-starter:5.1.5")
+    implementation(libs.grpc.spring.boot.starter)
 
     compileOnly(libs.annotation.api)
     compileOnly(libs.lombok)

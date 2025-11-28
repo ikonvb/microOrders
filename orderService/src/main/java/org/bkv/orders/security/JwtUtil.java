@@ -62,7 +62,7 @@ public class JwtUtil {
         }
     }
 
-    public boolean isRefreshToken(String token) {
+    public boolean isRefreshTokenValid(String token) {
         try {
             Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
             String type = claims.get("type", String.class);

@@ -26,14 +26,14 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     public static final String AUTHORIZATION = "Authorization";
     public static final String BEARER_ = "Bearer ";
     public static final int BEGIN_INDEX = 7;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
     private final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
+
+    public AuthTokenFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -43,9 +43,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
 
-            logger.info("Filtering JWT accessToken");
+
+            logger.info("Filtering JWT request = " + request);
 
             String jwt = parseJwt(request);
+
+            logger.info("Filtering JWT accessToken = " + jwt);
 
             if (jwt != null && jwtUtil.validateToken(jwt)) {
 
@@ -74,6 +77,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     }
 
     private String parseJwt(HttpServletRequest request) {
+
         String headerAuth = request.getHeader(AUTHORIZATION);
 
         if (headerAuth != null && headerAuth.startsWith(BEARER_)) {

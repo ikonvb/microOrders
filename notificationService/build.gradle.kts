@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
+    implementation(libs.jackson.databind)
     compileOnly(libs.annotation.api)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
@@ -31,6 +31,9 @@ dependencies {
     // ---- SPRING DATA JPA + POSTGRES ----
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.postgresql)
+
+    implementation(libs.mapstruct)
+    annotationProcessor(libs.mapstruct.processor)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

@@ -2,10 +2,15 @@ package org.bkv.orders.services.impls;
 
 
 import inventory.Inventory;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
+import org.bkv.orders.dto.requests.CreateOrderRequest;
 import org.bkv.orders.entity.OrderEntity;
 import org.bkv.orders.grpc.InventoryGrpcClient;
+import org.bkv.orders.mappers.OrderMapper;
+import org.bkv.orders.models.OrderDto;
 import org.bkv.orders.repo.OrderRepository;
 import org.bkv.orders.services.interfaces.IOrderService;
 import org.springframework.stereotype.Service;
@@ -16,7 +21,9 @@ public class OrderService implements IOrderService {
 
     private final InventoryGrpcClient grpcClient;
     private OrderRepository orderRepository;
+    private OrderMapper orderMapper;
 
+    @Override
     public Pair<Boolean, Double> canCreateOrder(OrderEntity order) {
 
         Inventory.CheckProductResponse response = grpcClient.checkProduct(order.getProductId(), order.getQuantity());
@@ -35,4 +42,13 @@ public class OrderService implements IOrderService {
         return orderRepository.save(order);
     }
 
+    @Override
+    public OrderEntity getOrderEntity(@Valid @NotNull CreateOrderRequest request) {
+        return orderMapper.toOrderEntity(request);
+    }
+
+    @Override
+    public OrderDto getOderDto(OrderEntity savedOrder) {
+        return orderMapper.toOrderDto(savedOrder);
+    }
 }

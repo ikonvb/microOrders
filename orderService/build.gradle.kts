@@ -24,7 +24,7 @@ configurations {
 
 dependencies {
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
+    implementation(libs.jackson.databind)
     implementation(libs.jwt.api)
     runtimeOnly(libs.jwt.impl)
     runtimeOnly(libs.jwt.jackson)
@@ -59,10 +59,17 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.postgresql)
 
+    implementation(libs.mapstruct)
+    annotationProcessor(libs.mapstruct.processor)
+
     // ---- TESTS ----
-    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.spring.security.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.test.webmvc)
+    testImplementation(platform(libs.junit.bom))
 }
 
 
